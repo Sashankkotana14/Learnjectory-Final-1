@@ -1,12 +1,12 @@
-// Permanent notification storage client. Talks to /api/notifications (database-backed) so read / dismissed state survives refresh, logout and other browsers.
+﻿// Permanent notification storage client. Talks to /api/notifications (database-backed) so read / dismissed state survives refresh, logout and other browsers.
 // Uses fetch directly (not api()) so these background syncs never fire the success-toast / 'lj:write' events that other components listen to.
-import { getToken } from './api';
+import { getToken, apiUrl } from './api';
 
 export type StoredState = { read: string[]; cleared: string[] };
 type Item = { id: string; kind: string; title: string; body: string; to: string; at: number; tag?: string };
 
 async function call(path: string, method: string, body?: any) {
-  const r = await fetch('/api/notifications' + path, { method, headers: { 'Content-Type': 'application/json', ...(getToken() ? { Authorization: 'Bearer ' + getToken() } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const r = await fetch(apiUrl('/notifications' + path), { method, headers: { 'Content-Type': 'application/json', ...(getToken() ? { Authorization: 'Bearer ' + getToken() } : {}) }, body: body ? JSON.stringify(body) : undefined });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'Request failed');
   return d as { notifications: { id: string; read: boolean; cleared: boolean }[] };
@@ -21,3 +21,4 @@ export async function syncNotifications(items: Item[], legacy?: StoredState) {
 export const saveRead = (ids: string[]) => call('/read', 'PUT', { ids });
 export const saveCleared = (ids: string[]) => call('/clear', 'PUT', { ids });
 export const itemsSignature = (items: Item[]) => items.map(i => `${i.id}|${i.title}|${i.body}|${i.tag || ''}|${i.at}`).join('\n');
+

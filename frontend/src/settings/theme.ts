@@ -1,8 +1,8 @@
-// Theme engine for the Settings module. Imported by pages/Settings.tsx (which main.tsx loads eagerly), so the saved theme is applied
+﻿// Theme engine for the Settings module. Imported by pages/Settings.tsx (which main.tsx loads eagerly), so the saved theme is applied
 // as soon as the app starts - on every page, including Login - without any other file having to know about it.
 // - Preference = 'light' | 'dark' | 'system'. 'system' follows the OS and re-applies live when the OS setting changes.
 // - Stored per user in the database (user_settings.theme, so it follows the account across devices) and cached in localStorage for instant start-up.
-import { getToken } from '../api';
+import { getToken, apiUrl } from '../api';
 export type ThemeMode = 'light' | 'dark' | 'system';
 export const THEME_MODES: ThemeMode[] = ['light', 'dark', 'system'];
 const DEVICE_KEY = 'lj_theme', userKey = (id: number | string) => 'lj_theme_' + id;
@@ -35,7 +35,7 @@ let lastToken: string | null = null;
 async function syncFromServer() {
   const id = currentUserId(); if (id === null) return;
   try {
-    const r = await fetch('/api/settings/profile', { headers: { Authorization: 'Bearer ' + getToken() } });
+    const r = await fetch(apiUrl('/settings/profile'), { headers: { Authorization: 'Bearer ' + getToken() } });
     if (!r.ok) return; const p = await r.json();
     if (isMode(p.theme) && currentUserId() === id) { write(userKey(id), p.theme); write(DEVICE_KEY, p.theme); applyTheme(p.theme); }
   } catch { /* offline: keep the cached theme */ }
@@ -51,3 +51,4 @@ function init() {
   setInterval(() => { const t = getToken(); if (t !== lastToken) { lastToken = t; applyTheme(cached()); if (t) syncFromServer(); } }, 1000);
 }
 init();
+

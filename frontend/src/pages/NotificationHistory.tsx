@@ -1,9 +1,9 @@
-// Notification History: read-only list of every notification previously received (read, unread and dismissed), loaded from the existing
+﻿// Notification History: read-only list of every notification previously received (read, unread and dismissed), loaded from the existing
 // notifications table via GET /api/notifications. Uses fetch directly (like notifyStore.ts) so viewing history never fires toasts or 'lj:write' events.
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Bell, CalendarClock, ClipboardList, Flame, Heart, History, MessageCircle, Search, Target, Trophy } from 'lucide-react';
-import { getToken } from '../api';
+import { getToken, apiUrl } from '../api';
 import { FILTERS, filterHistory, groupByDay, receivedMs, statusOf, timeLabel, type HistoryRow } from '../notificationHistory';
 
 const ICON: Record<string, any> = { overdue: ClipboardList, due: ClipboardList, session: BookOpen, reminder: CalendarClock, achievement: Trophy, 'goal-overdue': Target, 'goal-due': Target, habit: Flame, 'community-like': Heart, 'community-comment': MessageCircle };
@@ -12,7 +12,7 @@ const STATUS_TONE: Record<string, string> = { Unread: 'bg-pink-500/20 text-pink-
 const STATUSES: [string, string][] = [['', 'Any status'], ['unread', 'Unread'], ['read', 'Read'], ['dismissed', 'Dismissed']];
 
 async function loadHistory(): Promise<HistoryRow[]> {
-  const r = await fetch('/api/notifications', { headers: getToken() ? { Authorization: 'Bearer ' + getToken() } : {} });
+  const r = await fetch(apiUrl('/notifications'), { headers: getToken() ? { Authorization: 'Bearer ' + getToken() } : {} });
   const d = await r.json().catch(() => ({}));
   if (r.status === 401 && getToken() && d.error === 'Unauthorized') { localStorage.removeItem('token'); location.href = '/login'; }
   if (!r.ok) throw new Error(d.error || 'Could not load notification history');
@@ -34,10 +34,10 @@ export default function NotificationHistory() {
         <h1 className="flex items-center gap-2 text-2xl font-extrabold"><History className="h-6 w-6 text-sky-300" />Notification History</h1>
         {rows && <span className="chip bg-white/10">{rows.length} total</span>}
       </div>
-      <p className="text-sm text-sky-100/60">Every notification you’ve received, including ones you’ve read or dismissed.</p>
+      <p className="text-sm text-sky-100/60">Every notification youâ€™ve received, including ones youâ€™ve read or dismissed.</p>
 
       <div className="card space-y-3">
-        <div className="relative max-w-md"><Search className="absolute left-3 top-2.5 h-4 w-4 text-sky-300" /><input className="inp rounded-full pl-9" placeholder="Search notifications…" aria-label="Search notification history" value={q} onChange={e => setQ(e.target.value)} /></div>
+        <div className="relative max-w-md"><Search className="absolute left-3 top-2.5 h-4 w-4 text-sky-300" /><input className="inp rounded-full pl-9" placeholder="Search notificationsâ€¦" aria-label="Search notification history" value={q} onChange={e => setQ(e.target.value)} /></div>
         <div className="flex flex-wrap gap-2">{FILTERS.map(([k, l]) => <button key={k} type="button" onClick={() => setGroup(k)} aria-pressed={group === k} className={`chip !px-4 !py-1.5 ${group === k ? 'bg-sky-500/40 ring-1 ring-sky-300' : 'bg-white/5'}`}>{l}</button>)}
           <span className="mx-1 w-px bg-white/20" />{STATUSES.map(([k, l]) => <button key={k} type="button" onClick={() => setStatus(k)} aria-pressed={status === k} className={`chip !px-4 !py-1.5 ${status === k ? 'bg-sky-500/40 ring-1 ring-sky-300' : 'bg-white/5'}`}>{l}</button>)}</div>
       </div>
@@ -64,3 +64,4 @@ export default function NotificationHistory() {
     </div>
   );
 }
+

@@ -1,3 +1,5 @@
+﻿import { apiUrl } from './api';
+
 // Real-time notification client: listens to GET /api/notifications/stream (Server-Sent Events) and calls back the moment the server says something changed.
 // Uses fetch streaming (not EventSource) so the login token travels in the Authorization header, never in a URL. No imports, so it can be unit tested with plain node.
 // Reconnects automatically (1s, 2s, 4s ... max 30s), notices a silent/dead connection (no data for 70s; the server sends a heartbeat every 25s) and
@@ -30,7 +32,7 @@ export type LiveOptions = { getToken: () => string | null; onEvent: (e: LiveEven
 
 // Starts the live connection; returns stop(). Safe to call stop() more than once.
 export function connectLive(o: LiveOptions): () => void {
-  const url = o.url || '/api/notifications/stream', stale = o.staleMs ?? 70000;
+  const url = o.url || apiUrl('/notifications/stream'), stale = o.staleMs ?? 70000;
   let stopped = false, attempt = 0, ctl: AbortController | null = null, retry: any = null, watchdog: any = null;
   const status = (v: boolean) => { try { o.onStatus?.(v); } catch { /* ignore */ } };
   const schedule = () => { if (stopped) return; clearTimeout(retry); retry = setTimeout(run, backoff(attempt++)); };
@@ -51,3 +53,4 @@ export function connectLive(o: LiveOptions): () => void {
   run();
   return () => { stopped = true; clearTimeout(retry); clearTimeout(watchdog); try { ctl?.abort(); } catch { /* ignore */ } status(false); };
 }
+
